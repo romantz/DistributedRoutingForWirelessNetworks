@@ -113,6 +113,8 @@ public class CustomGlobal extends AbstractCustomGlobal{
 		nodeDistribution.setNumberOfNodes(numNodes);
 		nodeDistribution.initialize();
 
+		GraphNode.setGraphSize(numNodes);
+
 		for(int i = 0; i < numNodes; i++) {
 			GraphNode node = new GraphNode();
 			node.setPosition(nodeDistribution.getNextPosition());
