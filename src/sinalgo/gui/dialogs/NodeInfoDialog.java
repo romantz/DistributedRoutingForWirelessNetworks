@@ -96,7 +96,8 @@ public class NodeInfoDialog extends JDialog implements ActionListener, PropertyC
 	UnborderedJTextField interferenceText = new UnborderedJTextField();
 	UnborderedJTextField mobilityText = new UnborderedJTextField();
 	UnborderedJTextField reliabilityText = new UnborderedJTextField();
-	
+	UnborderedJTextField numOfNeighborsText = new UnborderedJTextField();
+
 	JButton ok = new JButton("OK");
 	JButton cancel = new JButton("Cancel");
 	
@@ -178,7 +179,7 @@ public class NodeInfoDialog extends JDialog implements ActionListener, PropertyC
 		this.add(BorderLayout.CENTER, info);
 		
 		JPanel infoPanel = new JPanel();
-		NonRegularGridLayout nrgl = new NonRegularGridLayout(6, 2, 5, 5);
+		NonRegularGridLayout nrgl = new NonRegularGridLayout(7, 2, 5, 5);
 		nrgl.setAlignToLeft(true);
 		infoPanel.setLayout(nrgl);
 		info.add(infoPanel);
@@ -212,6 +213,12 @@ public class NodeInfoDialog extends JDialog implements ActionListener, PropertyC
 		reliabilityText.setEditable(false);
 		infoPanel.add(reliabilityLabel);
 		infoPanel.add(reliabilityText);
+
+		UnborderedJTextField numOfNeighborsLabel = new UnborderedJTextField("Number of neighbors:", Font.BOLD);
+		numOfNeighborsText.setText(Global.toShortName(new Integer(node.outgoingConnections.size()).toString()));
+		numOfNeighborsText.setEditable(false);
+		infoPanel.add(numOfNeighborsLabel);
+		infoPanel.add(numOfNeighborsText);
 		
 		infoText.setText(node.toString());
 		JLabel infoTextLabel = new JLabel("Info Text:");
@@ -285,6 +292,7 @@ public class NodeInfoDialog extends JDialog implements ActionListener, PropertyC
 		interferenceText.setText(Global.toShortName(node.getInterferenceModel().getClass().getName()));
 		mobilityText.setText(Global.toShortName(node.getMobilityModel().getClass().getName()));
 		reliabilityText.setText(Global.toShortName(node.getReliabilityModel().getClass().getName()));
+		numOfNeighborsText.setText(Global.toShortName(new Integer(node.outgoingConnections.size()).toString()));
 		
 		infoText.setText(node.toString());
 		parent.redrawGUI();
