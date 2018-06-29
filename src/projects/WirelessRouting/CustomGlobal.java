@@ -39,8 +39,15 @@ package projects.WirelessRouting;
 
 import javax.swing.JOptionPane;
 
+import projects.WirelessRouting.nodes.nodeImplementations.GraphNode;
+import projects.defaultProject.models.distributionModels.Random;
+import sinalgo.models.DistributionModel;
+import sinalgo.nodes.Node;
 import sinalgo.runtime.AbstractCustomGlobal;
+import sinalgo.runtime.Runtime;
 import sinalgo.tools.Tools;
+
+import java.util.Vector;
 
 /**
  * This class holds customized global state and methods for the framework. 
@@ -89,12 +96,31 @@ public class CustomGlobal extends AbstractCustomGlobal{
 	 * AbstractCustomGlobal.CustomButton for more details.   
 	 */
 	@AbstractCustomGlobal.CustomButton(buttonText="Build Graph", toolTipText="Builds a graph")
-	public void sampleButton() {
+	public void createGraphButton() {
 		int numNodes = Integer.parseInt(Tools.showQueryDialog("Number of graph nodes:"));
-		System.out.println(numNodes);
+		buildGraph(numNodes);
 	}
+
+	Vector<GraphNode> graphNodes = new Vector<GraphNode>();
 
 	public void buildGraph(int numNodes) {
 
+		// remove all nodes (if any)
+		Runtime.clearAllNodes();
+		graphNodes.clear();
+
+		DistributionModel nodeDistribution = new Random();
+		nodeDistribution.setNumberOfNodes(numNodes);
+		nodeDistribution.initialize();
+
+		for(int i = 0; i < numNodes; i++) {
+			GraphNode node = new GraphNode();
+			node.setPosition(nodeDistribution.getNextPosition());
+			graphNodes.add(node);
+			node.finishInitializationWithDefaultModels(true);
+		}
+
+		// Repaint the GUI as we have added some nodes
+		Tools.repaintGUI();
 	}
 }
