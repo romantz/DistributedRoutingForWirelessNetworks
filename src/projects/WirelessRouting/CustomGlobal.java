@@ -40,6 +40,7 @@ package projects.WirelessRouting;
 import javax.swing.JOptionPane;
 
 import sinalgo.runtime.AbstractCustomGlobal;
+import sinalgo.tools.Tools;
 
 /**
  * This class holds customized global state and methods for the framework. 
@@ -87,8 +88,13 @@ public class CustomGlobal extends AbstractCustomGlobal{
 	 * with a text 'GO'. Alternatively, you can specify an icon that is shown on the button. See
 	 * AbstractCustomGlobal.CustomButton for more details.   
 	 */
-	@CustomButton(buttonText="GO", toolTipText="A sample button")
+	@AbstractCustomGlobal.CustomButton(buttonText="Build Graph", toolTipText="Builds a graph")
 	public void sampleButton() {
-		JOptionPane.showMessageDialog(null, "You Pressed the 'GO' button.");
+		int numNodes = Integer.parseInt(Tools.showQueryDialog("Number of graph nodes:"));
+		System.out.println(numNodes);
+	}
+
+	public void buildGraph(int numNodes) {
+
 	}
 }
