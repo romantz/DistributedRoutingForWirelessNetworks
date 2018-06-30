@@ -1,7 +1,11 @@
 package projects.WirelessRouting.nodes.nodeImplementations;
 
+import projects.WirelessRouting.CustomGlobal;
+import projects.WirelessRouting.nodes.messages.DominatingSetPathSearchMessage;
 import projects.WirelessRouting.nodes.messages.JoiningIndependentSetMessage;
 import projects.WirelessRouting.nodes.messages.RandomNumberMessage;
+import projects.WirelessRouting.nodes.messages.ShouldJoinDominatingSetMessage;
+import projects.WirelessRouting.nodes.timers.DominatingSetPathSearchTimer;
 import projects.WirelessRouting.nodes.timers.IndependentSetTimer;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
@@ -15,6 +19,7 @@ import sinalgo.tools.Tools;
 
 import java.awt.*;
 import java.util.Comparator;
+import java.util.HashSet;
 
 /**
  * Created by Roman_ on 2018-06-29.
@@ -24,13 +29,14 @@ public class GraphNode extends Node {
     private boolean active;
     private double currentRandomNumber;
     private static int graphSize = 0;
-    private GraphNode independentSetNeighbor;
-    private boolean isInIndependentSet;
+    //private GraphNode independentSetNeighbor;
+    private boolean isInDominatingSet;
     private boolean hasNeighborWithHigherRandomNumber;
-    private boolean receivedMessageFromNeighbor = false;
 
     private int numberOfActiveNeighbors;
     private int numberOfMessagesReceivedFromActiveNeighbors;
+
+    private HashSet<Integer> hasPathToNodes;
 
     private static int radius;
     { try {
@@ -51,14 +57,26 @@ public class GraphNode extends Node {
         active = a;
     }
 
+    public boolean isInDominatingSet(){
+        return isInDominatingSet;
+    }
+
     @Override
     public void init() {
         active = true;
-        independentSetNeighbor = null;
-        isInIndependentSet = false;
+        //independentSetNeighbor = null;
+        hasPathToNodes = new HashSet<Integer>();
+        isInDominatingSet = false;
 
-        IndependentSetTimer ist = new IndependentSetTimer(this, (int)Math.ceil(Math.log(graphSize)));
+        int numberOfIterationsForIndependentSetCalculation = (int)Math.ceil(Math.log(graphSize));
+
+        IndependentSetTimer ist = new IndependentSetTimer(this,
+                numberOfIterationsForIndependentSetCalculation);
         ist.startRelative(1, this);
+
+        DominatingSetPathSearchTimer dsps = new DominatingSetPathSearchTimer(this);
+        dsps.startRelative(numberOfIterationsForIndependentSetCalculation *
+                CustomGlobal.INDEPENDENT_SET_CALCULATION_ROUNDS_PER_ITERATION + 1, this);
     }
 
     @Override
@@ -66,17 +84,14 @@ public class GraphNode extends Node {
         while (inbox.hasNext()) {
             Message msg = inbox.next();
 
-            System.out.println("node " + ID + " received message: " + msg);
-
             if (msg instanceof JoiningIndependentSetMessage) {
-                isInIndependentSet = false;
-                independentSetNeighbor = ((JoiningIndependentSetMessage)msg).data;
+                isInDominatingSet = false;
+                //independentSetNeighbor = ((JoiningIndependentSetMessage)msg).data;
                 active = false;
             }
 
             if (msg instanceof RandomNumberMessage && isActive()) {
                 double num = ((RandomNumberMessage)msg).data;
-                System.out.println(ID +": " + currentRandomNumber + ", " + num);
                 if(num >= currentRandomNumber){
                     hasNeighborWithHigherRandomNumber = true;
                 }
@@ -88,13 +103,42 @@ public class GraphNode extends Node {
                 }
             }
 
-            receivedMessageFromNeighbor = true;
+            if(msg instanceof ShouldJoinDominatingSetMessage) {
+                isInDominatingSet = true;
+            }
+
+            if (msg instanceof DominatingSetPathSearchMessage) {
+                DominatingSetPathSearchMessage m = (DominatingSetPathSearchMessage)msg;
+                if(m.origin.ID != ID) {
+                    if(!hasPathToNodes.contains(m.origin.ID)){
+                        hasPathToNodes.add(m.origin.ID);
+                        for(GraphNode n: m.nodesInPath)
+                            hasPathToNodes.add(n.ID);
+                        if(isInDominatingSet){
+                            for(GraphNode n: m.nodesInPath)
+                                send(new ShouldJoinDominatingSetMessage(), n);
+                        } else {
+                            if(m.distanceLeft > 0) {
+                                HashSet<GraphNode> newPath = new HashSet<GraphNode>();
+                                newPath.addAll(m.nodesInPath);
+                                newPath.add(this);
+                                for (Edge e : outgoingConnections) {
+                                    send(new DominatingSetPathSearchMessage(m.origin,
+                                            newPath,
+                                            m.distanceLeft - 1), e.endNode);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            //receivedMessageFromNeighbor = true;
         }
     }
 
     public void joinIndependentSet(){
-        System.out.println("Node " + ID + " decided to join the independent set");
-        isInIndependentSet = true;
+        isInDominatingSet = true;
         active = false;
         for(Edge e: outgoingConnections) {
             GraphNode n = (GraphNode)e.endNode;
@@ -127,7 +171,6 @@ public class GraphNode extends Node {
         numberOfActiveNeighbors = 0;
         numberOfMessagesReceivedFromActiveNeighbors = 0;
         currentRandomNumber = Math.floor(Math.random() * Math.pow(graphSize, 10)) + 1;
-        System.out.println("node " + ID + " generated the number " + currentRandomNumber);
         hasNeighborWithHigherRandomNumber = false;
         for(Edge e: outgoingConnections) {
             GraphNode n = (GraphNode)e.endNode;
@@ -141,7 +184,7 @@ public class GraphNode extends Node {
     // Copied from projects.sample3.nodes.nodeImplementations.Antenna.draw
     public void draw(Graphics g, PositionTransformation pt, boolean highlight){
         Color bckup = g.getColor();
-        if(isInIndependentSet)
+        if(isInDominatingSet)
             this.setColor(Color.RED);
         else
             this.setColor(Color.BLACK);

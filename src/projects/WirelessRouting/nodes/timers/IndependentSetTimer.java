@@ -1,5 +1,6 @@
 package projects.WirelessRouting.nodes.timers;
 
+import projects.WirelessRouting.CustomGlobal;
 import projects.WirelessRouting.nodes.nodeImplementations.GraphNode;
 import sinalgo.nodes.timers.Timer;
 
@@ -21,7 +22,7 @@ public class IndependentSetTimer extends Timer{
             node.independentSetIteration();
             iterations--;
             if(iterations > 0)
-                this.startRelative(2, node);
+                this.startRelative(CustomGlobal.INDEPENDENT_SET_CALCULATION_ROUNDS_PER_ITERATION, node);
         }
     }
 

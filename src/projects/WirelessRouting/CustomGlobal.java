@@ -71,6 +71,8 @@ import java.util.Vector;
  * added to the GUI. 
  */
 public class CustomGlobal extends AbstractCustomGlobal{
+
+	public static final int INDEPENDENT_SET_CALCULATION_ROUNDS_PER_ITERATION = 2;
 	
 	/* (non-Javadoc)
 	 * @see runtime.AbstractCustomGlobal#hasTerminated()
