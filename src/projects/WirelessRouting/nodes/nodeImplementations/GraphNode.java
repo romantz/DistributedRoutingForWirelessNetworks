@@ -1,10 +1,8 @@
 package projects.WirelessRouting.nodes.nodeImplementations;
 
 import projects.WirelessRouting.CustomGlobal;
-import projects.WirelessRouting.nodes.messages.DominatingSetPathSearchMessage;
-import projects.WirelessRouting.nodes.messages.JoiningIndependentSetMessage;
-import projects.WirelessRouting.nodes.messages.RandomNumberMessage;
-import projects.WirelessRouting.nodes.messages.ShouldJoinDominatingSetMessage;
+import projects.WirelessRouting.nodes.messages.*;
+import projects.WirelessRouting.nodes.timers.BFSTimer;
 import projects.WirelessRouting.nodes.timers.DominatingSetPathSearchTimer;
 import projects.WirelessRouting.nodes.timers.IndependentSetTimer;
 import sinalgo.configuration.Configuration;
@@ -19,7 +17,9 @@ import sinalgo.tools.Tools;
 
 import java.awt.*;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 /**
  * Created by Roman_ on 2018-06-29.
@@ -29,7 +29,6 @@ public class GraphNode extends Node {
     private boolean active;
     private double currentRandomNumber;
     private static int graphSize = 0;
-    //private GraphNode independentSetNeighbor;
     private boolean isInDominatingSet;
     private boolean hasNeighborWithHigherRandomNumber;
 
@@ -37,6 +36,10 @@ public class GraphNode extends Node {
     private int numberOfMessagesReceivedFromActiveNeighbors;
 
     private HashSet<Integer> hasPathToNodes;
+
+    // A mapping S -> A where S is a destination node ID which is in the dominating set and an adjacent node A
+    // such that a message from the current node to S should be sent through A
+    private HashMap<Integer, GraphNode> routingTable;
 
     private static int radius;
     { try {
@@ -68,6 +71,8 @@ public class GraphNode extends Node {
         hasPathToNodes = new HashSet<Integer>();
         isInDominatingSet = false;
 
+        routingTable = new HashMap<Integer, GraphNode>();
+
         int numberOfIterationsForIndependentSetCalculation = (int)Math.ceil(Math.log(graphSize));
 
         IndependentSetTimer ist = new IndependentSetTimer(this,
@@ -77,6 +82,10 @@ public class GraphNode extends Node {
         DominatingSetPathSearchTimer dsps = new DominatingSetPathSearchTimer(this);
         dsps.startRelative(numberOfIterationsForIndependentSetCalculation *
                 CustomGlobal.INDEPENDENT_SET_CALCULATION_ROUNDS_PER_ITERATION + 1, this);
+
+        BFSTimer bfst = new BFSTimer(this);
+        bfst.startRelative(numberOfIterationsForIndependentSetCalculation *
+                CustomGlobal.INDEPENDENT_SET_CALCULATION_ROUNDS_PER_ITERATION + 6, this);
     }
 
     @Override
@@ -133,7 +142,18 @@ public class GraphNode extends Node {
                 }
             }
 
-            //receivedMessageFromNeighbor = true;
+            if(msg instanceof BFSMessage) {
+                BFSMessage m = (BFSMessage)msg;
+                if(!routingTable.containsKey(m.originId)) {
+                    routingTable.put(m.originId, m.sender);
+                    for (Edge e : outgoingConnections) {
+                        GraphNode endNode = (GraphNode)e.endNode;
+                        if(endNode.isInDominatingSet()) {
+                            send(new BFSMessage(m.originId, this), endNode);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -191,10 +211,10 @@ public class GraphNode extends Node {
         g.setColor(Color.BLACK);
         this.drawingSizeInPixels = (int) (defaultDrawingSizeInPixels * pt.getZoomFactor());
         super.drawAsDisk(g, pt, highlight, drawingSizeInPixels);
-        g.setColor(Color.LIGHT_GRAY);
-        pt.translateToGUIPosition(this.getPosition());
-        int r = (int) (radius * pt.getZoomFactor());
-        g.drawOval(pt.guiX - r, pt.guiY - r, r*2, r*2);
+        //g.setColor(Color.LIGHT_GRAY);
+        //pt.translateToGUIPosition(this.getPosition());
+        //int r = (int) (radius * pt.getZoomFactor());
+        //g.drawOval(pt.guiX - r, pt.guiY - r, r*2, r*2);
         g.setColor(bckup);
     }
 

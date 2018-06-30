@@ -1,5 +1,7 @@
 package projects.WirelessRouting.nodes.timers;
 
+import edu.stanford.nlp.graph.Graph;
+import projects.WirelessRouting.nodes.messages.BFSMessage;
 import projects.WirelessRouting.nodes.messages.DominatingSetPathSearchMessage;
 import projects.WirelessRouting.nodes.nodeImplementations.GraphNode;
 import sinalgo.nodes.edges.Edge;
@@ -10,17 +12,20 @@ import java.util.HashSet;
 /**
  * Created by Roman_ on 2018-06-30.
  */
-public class DominatingSetPathSearchTimer extends Timer {
-    GraphNode origin;
+public class BFSTimer extends Timer {
+    public GraphNode origin;
 
-    public DominatingSetPathSearchTimer(GraphNode n){
-        origin = n;
+    public BFSTimer(GraphNode o){
+        origin = o;
     }
 
     public void fire() {
         if(origin.isInDominatingSet()) {
             for(Edge e: origin.outgoingConnections) {
-                origin.send(new DominatingSetPathSearchMessage(origin, new HashSet<GraphNode>(), 2), e.endNode);
+                GraphNode endNode = (GraphNode)e.endNode;
+                if(endNode.isInDominatingSet()) {
+                    origin.send(new BFSMessage(origin.ID, origin), endNode);
+                }
             }
         }
     }
