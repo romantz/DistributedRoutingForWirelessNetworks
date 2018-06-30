@@ -17,4 +17,8 @@ public class JoiningIndependentSetMessage extends Message {
     public Message clone() {
         return this; // read-only policy
     }
+
+    public String toString(){
+        return "node " + data.ID + " JoiningIndependentSetMessage";
+    }
 }

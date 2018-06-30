@@ -19,6 +19,9 @@ public class IndependentSetTimer extends Timer{
     public void fire() {
         if(node.isActive()) {
             node.independentSetIteration();
+            iterations--;
+            if(iterations > 0)
+                this.startRelative(2, node);
         }
     }
 

@@ -29,6 +29,9 @@ public class GraphNode extends Node {
     private boolean hasNeighborWithHigherRandomNumber;
     private boolean receivedMessageFromNeighbor = false;
 
+    private int numberOfActiveNeighbors;
+    private int numberOfMessagesReceivedFromActiveNeighbors;
+
     private static int radius;
     { try {
         radius = Configuration.getIntegerParameter("GeometricNodeCollection/rMax");
@@ -54,7 +57,7 @@ public class GraphNode extends Node {
         independentSetNeighbor = null;
         isInIndependentSet = false;
 
-        IndependentSetTimer ist = new IndependentSetTimer(this, 1);
+        IndependentSetTimer ist = new IndependentSetTimer(this, (int)Math.ceil(Math.log(graphSize)));
         ist.startRelative(1, this);
     }
 
@@ -62,13 +65,8 @@ public class GraphNode extends Node {
     public void handleMessages(Inbox inbox) {
         while (inbox.hasNext()) {
             Message msg = inbox.next();
-            if (msg instanceof RandomNumberMessage) {
-                double num = ((RandomNumberMessage)msg).data;
-                System.out.println(num + ", " + currentRandomNumber);
-                if(num >= currentRandomNumber){
-                    hasNeighborWithHigherRandomNumber = true;
-                }
-            }
+
+            System.out.println("node " + ID + " received message: " + msg);
 
             if (msg instanceof JoiningIndependentSetMessage) {
                 isInIndependentSet = false;
@@ -76,7 +74,31 @@ public class GraphNode extends Node {
                 active = false;
             }
 
+            if (msg instanceof RandomNumberMessage && isActive()) {
+                double num = ((RandomNumberMessage)msg).data;
+                System.out.println(ID +": " + currentRandomNumber + ", " + num);
+                if(num >= currentRandomNumber){
+                    hasNeighborWithHigherRandomNumber = true;
+                }
+
+                numberOfMessagesReceivedFromActiveNeighbors++;
+                if(numberOfMessagesReceivedFromActiveNeighbors == numberOfActiveNeighbors &&
+                        !hasNeighborWithHigherRandomNumber) {
+                    joinIndependentSet();
+                }
+            }
+
             receivedMessageFromNeighbor = true;
+        }
+    }
+
+    public void joinIndependentSet(){
+        System.out.println("Node " + ID + " decided to join the independent set");
+        isInIndependentSet = true;
+        active = false;
+        for(Edge e: outgoingConnections) {
+            GraphNode n = (GraphNode)e.endNode;
+            send(new JoiningIndependentSetMessage(this), n);
         }
     }
 
@@ -91,49 +113,29 @@ public class GraphNode extends Node {
 
     @Override
     public void preStep() {
-        if(active) {
-            currentRandomNumber = Math.floor(Math.random() * Math.pow(graphSize, 10)) + 1;
-            hasNeighborWithHigherRandomNumber = false;
-        }
-        System.out.println("test " + currentRandomNumber);
+
     }
 
     @Override
     public void postStep() {
-        if(
-                (receivedMessageFromNeighbor || outgoingConnections.size() == 0)
-                        && active && !hasNeighborWithHigherRandomNumber) {
-            isInIndependentSet = true;
-            active = false;
-            for(Edge e: outgoingConnections){
-                send(new JoiningIndependentSetMessage(this), e.endNode);
-            }
+        if(isActive() && numberOfActiveNeighbors == 0){
+            joinIndependentSet();
         }
-
-        System.out.println(isInIndependentSet);
     }
 
     public void independentSetIteration() {
-        for(Edge e: outgoingConnections){
-            GraphNode endNode = (GraphNode)e.endNode;
-            if(endNode.isActive()) {
-                send(new RandomNumberMessage(currentRandomNumber), e.endNode);
+        numberOfActiveNeighbors = 0;
+        numberOfMessagesReceivedFromActiveNeighbors = 0;
+        currentRandomNumber = Math.floor(Math.random() * Math.pow(graphSize, 10)) + 1;
+        System.out.println("node " + ID + " generated the number " + currentRandomNumber);
+        hasNeighborWithHigherRandomNumber = false;
+        for(Edge e: outgoingConnections) {
+            GraphNode n = (GraphNode)e.endNode;
+            if (n.isActive()) {
+                numberOfActiveNeighbors++;
+                send(new RandomNumberMessage(currentRandomNumber), n);
             }
         }
-        /*boolean isMaxAmongNeighbors = true;
-        for(Edge e: outgoingConnections){
-            GraphNode endNode = (GraphNode)e.endNode;
-            if(endNode.isActive() && endNode.currentRandomNumber >= currentRandomNumber) {
-                isMaxAmongNeighbors = false;
-            }
-        }
-        if(isMaxAmongNeighbors) {
-            for(Edge e: outgoingConnections){
-                isInIndependentSet = true;
-                active = false;
-                send(new JoiningIndependentSetMessage(this), e.endNode);
-            }
-        }*/
     }
 
     // Copied from projects.sample3.nodes.nodeImplementations.Antenna.draw

@@ -16,4 +16,8 @@ public class RandomNumberMessage extends Message {
     public Message clone() {
         return this; // read-only policy
     }
+
+    public String toString(){
+        return "Random number: " + data;
+    }
 }
