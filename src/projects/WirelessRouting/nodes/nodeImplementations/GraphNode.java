@@ -5,9 +5,11 @@ import projects.WirelessRouting.nodes.messages.*;
 import projects.WirelessRouting.nodes.timers.BFSTimer;
 import projects.WirelessRouting.nodes.timers.DominatingSetPathSearchTimer;
 import projects.WirelessRouting.nodes.timers.IndependentSetTimer;
+import projects.WirelessRouting.nodes.timers.UserMessageTimer;
 import sinalgo.configuration.Configuration;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.configuration.WrongConfigurationException;
+import sinalgo.gui.helper.NodeSelectionHandler;
 import sinalgo.gui.transformation.PositionTransformation;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.edges.Edge;
@@ -154,6 +156,20 @@ public class GraphNode extends Node {
                     }
                 }
             }
+
+            if(msg instanceof UserMessage) {
+                UserMessage m = (UserMessage) msg;
+                if(m.target.ID == ID){
+                    System.out.println("Node " + ID + " received the message: " + m.message);
+                } else if(m.adjacentToTarget.ID == ID){
+                    send(new UserMessage(m.message, m.target, m.adjacentToTarget), m.target);
+                } else {
+                    GraphNode nextNode = routingTable.get(m.adjacentToTarget.ID);
+                    if(nextNode != null) {
+                        send(new UserMessage(m.message, m.target, m.adjacentToTarget), nextNode);
+                    }
+                }
+            }
         }
     }
 
@@ -216,6 +232,85 @@ public class GraphNode extends Node {
         //int r = (int) (radius * pt.getZoomFactor());
         //g.drawOval(pt.guiX - r, pt.guiY - r, r*2, r*2);
         g.setColor(bckup);
+    }
+
+
+    @NodePopupMethod(menuText = "Send Message To...")
+    public void sendMessageTo() {
+
+        final String msg = Tools.showQueryDialog("Please enter a message");
+        final GraphNode source = this;
+
+        Tools.getNodeSelectedByUser(new NodeSelectionHandler() {
+            public void handleNodeSelectedEvent(Node t) {
+                if(t == null) {
+                    return; // aborted
+                }
+
+                GraphNode target = (GraphNode) t;
+
+                Tools.getNodeSelectedByUser(new NodeSelectionHandler() {
+                    public void handleNodeSelectedEvent(Node a) {
+                        if (a == null) {
+                            return; // aborted
+                        }
+
+                        GraphNode adjacentToTarget = (GraphNode) a;
+
+                        if (!adjacentToTarget.isInDominatingSet()) {
+                            Tools.showMessageDialog("An illegal node was chosen");
+                        } else {
+                            boolean isAdjacent = false;
+
+                            for(Edge e: adjacentToTarget.outgoingConnections) {
+                                GraphNode endNode = (GraphNode)e.endNode;
+                                if(endNode.ID == target.ID){
+                                    isAdjacent = true;
+                                }
+                                if(endNode.ID == source.ID){
+                                    UserMessageTimer umt = new UserMessageTimer(
+                                            msg,
+                                            source,
+                                            target,
+                                            target,
+                                            source);
+                                    umt.startRelative(1, source);
+                                    return;
+                                }
+                            }
+
+                            if(!isAdjacent) {
+                                Tools.showMessageDialog("The chosen node in the dominating set " +
+                                        "is not adjacent to the target node");
+                            } else {
+                                GraphNode neighborInDominatingSet = null;
+
+                                for(Edge e: source.outgoingConnections) {
+                                    GraphNode endNode = (GraphNode)e.endNode;
+                                    if(endNode.isInDominatingSet()) {
+                                        neighborInDominatingSet = endNode;
+                                    }
+                                }
+
+                                if(neighborInDominatingSet == null){
+                                    Tools.showMessageDialog("The chosen source node has no neighbor " +
+                                            "in the dominating set");
+                                }
+                                else {
+                                    UserMessageTimer umt = new UserMessageTimer(
+                                            msg,
+                                            source,
+                                            neighborInDominatingSet,
+                                            target,
+                                            adjacentToTarget);
+                                    umt.startRelative(1, source);
+                                }
+                            }
+                        }
+                    }
+                }, "Select a node in the dominating set which is adjacent to the target node");
+            }
+        }, "Select a target node to send a message to");
     }
 
     /**
