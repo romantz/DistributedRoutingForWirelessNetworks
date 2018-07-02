@@ -146,7 +146,7 @@ public class GraphNode extends Node {
 
             if(msg instanceof BFSMessage) {
                 BFSMessage m = (BFSMessage)msg;
-                if(!routingTable.containsKey(m.originId)) {
+                if(m.originId != ID && !routingTable.containsKey(m.originId)) {
                     routingTable.put(m.originId, m.sender);
                     for (Edge e : outgoingConnections) {
                         GraphNode endNode = (GraphNode)e.endNode;
