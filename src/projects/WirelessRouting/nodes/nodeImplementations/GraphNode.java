@@ -347,18 +347,21 @@ public class GraphNode extends Node {
                             } else {
                                 GraphNode neighborInDominatingSet = null;
 
-                                for(Edge e: source.outgoingConnections) {
-                                    GraphNode endNode = (GraphNode)e.endNode;
-                                    if(endNode.isInDominatingSet()) {
+                                // Find a neighbor in the dominating set to use its routing table to send the message
+                                for (Edge e : source.outgoingConnections) {
+                                    GraphNode endNode = (GraphNode) e.endNode;
+                                    if (endNode.isInDominatingSet()) {
                                         neighborInDominatingSet = endNode;
                                     }
                                 }
+
 
                                 if(neighborInDominatingSet == null){
                                     Tools.showMessageDialog("The chosen source node has no neighbor " +
                                             "in the dominating set");
                                 }
                                 else {
+                                    // Send the message to a nearby node which is in the dominating set
                                     UserMessageTimer umt = new UserMessageTimer(
                                             msg,
                                             source,
