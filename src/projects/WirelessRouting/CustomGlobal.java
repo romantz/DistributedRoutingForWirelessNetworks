@@ -93,9 +93,7 @@ public class CustomGlobal extends AbstractCustomGlobal{
 	}
 	
 	/**
-	 * An example to add a button to the user interface. In this sample, the button is labeled
-	 * with a text 'GO'. Alternatively, you can specify an icon that is shown on the button. See
-	 * AbstractCustomGlobal.CustomButton for more details.   
+	 * Graph creation button
 	 */
 	@AbstractCustomGlobal.CustomButton(buttonText="Build Graph", toolTipText="Builds a graph")
 	public void createGraphButton() {
@@ -105,6 +103,10 @@ public class CustomGlobal extends AbstractCustomGlobal{
 
 	Vector<GraphNode> graphNodes = new Vector<GraphNode>();
 
+	/**
+	 * Build the graph
+	 * @param numNodes the number of nodes the graph should contain
+	 */
 	public void buildGraph(int numNodes) {
 
 		// remove all nodes (if any)
@@ -117,6 +119,7 @@ public class CustomGlobal extends AbstractCustomGlobal{
 
 		GraphNode.setGraphSize(numNodes);
 
+		// create nodes
 		for(int i = 0; i < numNodes; i++) {
 			GraphNode node = new GraphNode();
 			node.setPosition(nodeDistribution.getNextPosition());
