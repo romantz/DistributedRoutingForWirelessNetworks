@@ -302,7 +302,7 @@ public class GraphNode extends Node {
                     return; // aborted
                 }
 
-                GraphNode target = (GraphNode) t;
+                final GraphNode target = (GraphNode) t;
 
                 // Select a node that is adjacent to the destination
                 Tools.getNodeSelectedByUser(new NodeSelectionHandler() {
