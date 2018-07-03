@@ -5,8 +5,12 @@ import sinalgo.nodes.messages.Message;
 
 /**
  * Created by Roman_ on 2018-06-29.
+ * Used in the independent set creation phase to let neighbor nodes to know that
+ * the current node joined the independent set
  */
 public class JoiningIndependentSetMessage extends Message {
+
+    // The node which is joining the independent set
     public GraphNode data;
 
     public JoiningIndependentSetMessage(GraphNode n){

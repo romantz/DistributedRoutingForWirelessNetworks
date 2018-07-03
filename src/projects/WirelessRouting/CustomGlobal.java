@@ -72,6 +72,7 @@ import java.util.Vector;
  */
 public class CustomGlobal extends AbstractCustomGlobal{
 
+	// Number of rounds single iteration of independent set calculation takes
 	public static final int INDEPENDENT_SET_CALCULATION_ROUNDS_PER_ITERATION = 2;
 	
 	/* (non-Javadoc)
